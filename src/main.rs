@@ -1,3 +1,5 @@
+use std::fs;
+use std::io::Error;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::io::prelude::*;
@@ -10,7 +12,7 @@ fn main() {
 
     match listener {
         Ok(v) => listen_and_serve(v),
-        Err(err) => println!(" {err:?} error")
+        Err(err) => log_err(err)
     }
 }
 
@@ -19,8 +21,8 @@ fn listen_and_serve(listener: TcpListener){
     for stream in listener.incoming(){
         
         match stream {
-            Ok(v) => println!("Connection established! {v:?}"),
-            Err(err) => println!("Error: {err:?}")
+            Ok(v) => handle_connection(v),
+            Err(err) => log_err(err)
         }
     }
 } 
@@ -28,10 +30,33 @@ fn listen_and_serve(listener: TcpListener){
 fn handle_connection(mut stream: TcpStream){
     let mut buffer = [0;1024];
 
-    let data = stream.read(&mut buffer);
+    let res = stream.read(&mut buffer);
 
-    match data {
-        Ok(v) => println!("{v:?}"),
-        Err(e) => println!("{e:?}")
+    if res.is_err() {
+        panic!("Could not parse TCP stream")
     }
+
+    // this symbol [..] somehow changes the strings format, look into it
+     match std::str::from_utf8(&buffer){
+        Ok(v) => println!("{}", &v[..]),
+        Err(e) => println!("{e:?}")
+    };
+    
+    let content = fs::read_to_string("../index.html").unwrap();
+
+
+
+    let response = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+                            content.len(),
+                            content);
+
+    
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
+ 
+    
+}
+
+fn log_err(err: Error){
+    println!("Error: {}",err)
 }
