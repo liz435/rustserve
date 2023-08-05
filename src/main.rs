@@ -6,9 +6,9 @@ use std::io::prelude::*;
 
 fn main() {
     
-    let local_host_addr  = "127.0.0.1:7878";
+    const LOCAL_HOST_ADDR: &str  = "127.0.0.1:7878";
     
-    let listener = TcpListener::bind(local_host_addr);
+    let listener = TcpListener::bind(LOCAL_HOST_ADDR);
 
     match listener {
         Ok(v) => listen_and_serve(v),
